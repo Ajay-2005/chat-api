@@ -34,4 +34,29 @@ module.exports = {
             res.status(500).json({ error: 'Internal Server Error' });
         }
     },
+    dologin: async (req, res) => {
+        const collection = await getcollection();
+        try {
+            const { email, password } = req.body;
+            const user = await collection.usercollection.findOne({ email: email });
+
+            if (!user) {
+                res.status(404).json({ message: "User not found" });
+            } else {
+                bcrypt.compare(password, user.password).then((status) => {
+                    if (status) {
+                      
+                        res.status(200).json({ message: 'Login successfully', user: user });
+                    } else {
+                        res.status(401).json({ message: 'Login failed' });
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error during login', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+
+
 };
