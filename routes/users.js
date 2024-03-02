@@ -6,5 +6,6 @@ router.use(express.json())
 
 router.post("/register", usercontroller.doSignup)
 router.post("/login",usercontroller.dologin)
-
+router.post("/send-resetlink",usercontroller.sendResetlink)
+router.post("/reset-password",usercontroller.resetPassword)
 module.exports=router
