@@ -5,7 +5,10 @@ const jwt = require("jsonwebtoken");
 require('dotenv').config();
 const crypto = require("crypto")
 const mailer = require("nodemailer")
-const speakeasy = require("speakeasy")
+const speakeasy = require("speakeasy");
+const collections = require('../config/collections');
+const {ObjectId}=require("mongodb")
+const collection = getcollection()
 module.exports = {
     generatesecert: () => {
         return speakeasy.generateSecret({ length: 6, name: "chatapi" })
@@ -51,7 +54,7 @@ module.exports = {
         }
     },
     doSignup: async (req, res) => {
-        const collection = await getcollection();
+       
 
         try {
             const userdata = req.body;
@@ -64,7 +67,7 @@ module.exports = {
             const secret = module.exports.generatesecert();
             const otp = module.exports.generateOtp(secret);
 
-            // Send OTP via email
+
             try {
                 await module.exports.sendOTPEmail(userdata.email, otp);
             } catch (error) {
@@ -72,18 +75,18 @@ module.exports = {
                 return res.status(500).json({ error: 'Internal server error' });
             }
 
-            // In the database, store the hashed password and OTP only if the OTP is correct
+
             const hashedPassword = await bcrypt.hash(userdata.password, 10);
             const user = {
                 name: userdata.name,
                 bio: userdata.bio,
                 email: userdata.email,
                 password: hashedPassword,
-                otp:otp,
-                isVerified: false  // Mark the user as verified since the OTP is correct
+                otp: otp,
+                isVerified: false
             };
-             await collection.usercollection.insertOne(user);
-             res.status(200).json({ message: 'User successfully created.' });
+            await collection.usercollection.insertOne(user);
+            res.status(200).json({ message: 'User successfully created.' });
         } catch (error) {
             console.error('Error during signup:', error);
             return res.status(500).json({ error: 'Internal Server Error' });
@@ -92,16 +95,20 @@ module.exports = {
     otpVerifyDuringSignup: async (req, res) => {
         try {
             const data = req.body;
-            const collection = await getcollection();
+           
             const user = await collection.usercollection.findOne({ email: data.email });
-    
+
             if (!user) {
                 return res.status(404).json({ error: "User not found" });
             }
-    
+
             if (data.otp === user.otp) {
+                await collection.usercollection.updateOne({ "email": user.email }, {
+                    $set: { "isVerified": true }
+
+                })
                 return res.json("OTP verified successfully");
-                
+
             } else {
                 return res.json("Invalid OTP token");
             }
@@ -110,7 +117,7 @@ module.exports = {
             return res.status(500).json({ error: 'Internal Server Error' });
         }
     },
-    
+
     generateToken: (user) => {
         try {
             const token = jwt.sign({ username: user.name, useremail: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
@@ -122,7 +129,7 @@ module.exports = {
     },
 
     dologin: async (req, res) => {
-        const collection = await getcollection();
+       
         try {
             const { email, password } = req.body;
             const userExist = await collection.usercollection.findOne({ email: email });
@@ -165,7 +172,7 @@ module.exports = {
 
 
     updateUserResettoken: async (email, token) => {
-        const collection = await getcollection()
+       
         try {
             const user = await collection.usercollection.findOne({ email: email })
             const result = await collection.usercollection.findOneAndUpdate(
@@ -178,7 +185,6 @@ module.exports = {
             }
             else {
                 return null
-                throw new Error("user not found")
 
             }
         } catch (error) {
@@ -224,7 +230,7 @@ module.exports = {
     resetPassword: async (req, res) => {
         const token = req.query.token;
         const newpassword = req.body.newpassword
-        const collection = await getcollection();
+       
 
         try {
             if (!token) {
@@ -233,7 +239,7 @@ module.exports = {
 
             const user = await collection.usercollection.findOne({ resettoken: token });
             console.log(user);
-            
+
 
             if (!user) {
                 return res.status(400).json({ error: 'Invalid or expired token' });
@@ -257,6 +263,32 @@ module.exports = {
             res.status(500).json({ error: 'Internal server error during password reset. Please try again later.' });
         }
     },
+    getAllusers: async (req, res) => {
+       
+        const users = await collections.usercollection.find().toArray()
+        res.json(users)
+    },
+    getUserById: async (req, res) => {
+        try {
+            
+            const id = req.params.id;
+    
+            const user = await collections.usercollection.findOne({ _id: id });
+    
+            if (!user) {
+                return res.status(404).json({ message: "User not found" });
+            }
+    
+            res.json(user);
+        } catch (error) {
+            console.error("Error fetching user by ID:", error);
+            res.status(500).json({ message: "Internal server error" });
+        }
+    }
+    
+  
+    
+
 
 
 
