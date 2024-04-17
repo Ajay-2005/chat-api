@@ -7,7 +7,7 @@ const crypto = require("crypto")
 const mailer = require("nodemailer")
 const speakeasy = require("speakeasy");
 const collections = require('../config/collections');
-const {ObjectId}=require("mongodb")
+const { ObjectId } = require("mongodb")
 const collection = getcollection()
 module.exports = {
     generatesecert: () => {
@@ -19,6 +19,12 @@ module.exports = {
             encoding: 'base32'
         })
     },
+    /**
+ * Verifies the provided token against the secret.
+ * @param {object} secret - The secret object generated for the user.
+ * @param {string} token - The token to be verified.
+ * @returns {boolean} True if the token is valid, false otherwise.
+ */
     verifytoken: (secret, token) => {
         return speakeasy.totp.verify({
             secret: secret.base32,
@@ -53,8 +59,9 @@ module.exports = {
             throw error;
         }
     },
+
     doSignup: async (req, res) => {
-       
+
 
         try {
             const userdata = req.body;
@@ -95,7 +102,7 @@ module.exports = {
     otpVerifyDuringSignup: async (req, res) => {
         try {
             const data = req.body;
-           
+
             const user = await collection.usercollection.findOne({ email: data.email });
 
             if (!user) {
@@ -129,7 +136,7 @@ module.exports = {
     },
 
     dologin: async (req, res) => {
-       
+
         try {
             const { email, password } = req.body;
             const userExist = await collection.usercollection.findOne({ email: email });
@@ -172,7 +179,7 @@ module.exports = {
 
 
     updateUserResettoken: async (email, token) => {
-       
+
         try {
             const user = await collection.usercollection.findOne({ email: email })
             const result = await collection.usercollection.findOneAndUpdate(
@@ -230,7 +237,7 @@ module.exports = {
     resetPassword: async (req, res) => {
         const token = req.query.token;
         const newpassword = req.body.newpassword
-       
+
 
         try {
             if (!token) {
@@ -264,30 +271,30 @@ module.exports = {
         }
     },
     getAllusers: async (req, res) => {
-       
+
         const users = await collections.usercollection.find().toArray()
         res.json(users)
     },
     getUserById: async (req, res) => {
         try {
-            
+
             const id = req.params.id;
-    
+
             const user = await collections.usercollection.findOne({ _id: id });
-    
+
             if (!user) {
                 return res.status(404).json({ message: "User not found" });
             }
-    
+
             res.json(user);
         } catch (error) {
             console.error("Error fetching user by ID:", error);
             res.status(500).json({ message: "Internal server error" });
         }
     }
-    
-  
-    
+
+
+
 
 
 
