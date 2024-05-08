@@ -1,18 +1,19 @@
-const express = require('express')
-const router = express()
+const express = require('express');
+const router = express.Router();
 
-const usercontroller = require('../controllers/user_controller')
+const userController = require('../controllers/user_controller');
+const authMiddleware = require("../middleware/auth_middleware");
 
-const authmiddleware = require("../middleware/auth_middleware")
-router.use(express.json())
+router.use(express.json());
 
-router.get("/users", authmiddleware,usercontroller.getAllusers)
-router.get("/users/:id",authmiddleware, usercontroller.getUserById)
+// Example routes with valid callback functions
+router.get("/users", userController.getAllusers);
+router.get("/users/:id", authMiddleware, userController.getUserById);
 
-router.post("/register", usercontroller.doSignup)
-router.post("/verify-signup", usercontroller.otpVerifyDuringSignup)
-router.post("/login", usercontroller.dologin)
-router.post("/send-resetlink", usercontroller.sendResetlink)
-router.post("/reset-password", usercontroller.resetPassword)
+router.post("/register", userController.doSignup);
+router.post("/verify-signup", userController.otpVerifyDuringSignup);
+router.post("/login", userController.dologin);
+router.post("/send-resetlink", userController.sendResetlink);
+router.post("/reset-password", userController.resetPassword);
 
-module.exports = router
+module.exports = router;
